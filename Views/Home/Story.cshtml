@@ -1,0 +1,252 @@
+﻿
+@{
+    ViewData["Title"] = "Story";
+}
+<script>
+    $(document).ready(function () {
+        $("#btnPost").click(function () {
+            debugger;
+         
+            var txt = document.getElementById('urlText').value;
+            if (txt == "") {
+                return;
+            }
+            $.ajax({
+                url: '/Home/StoryDownloader',
+                type: 'POST',
+                dataType: 'json',
+                data: { url: txt },
+                success: function (data) {
+                    debugger;
+                    let type = data.type;
+                    var url = data.url;
+                    console.log(url);
+                    document.getElementById('toss').innerHTML = "<h5 >Display Media</h5>";
+                    document.getElementById('tossButtons').innerHTML = "";
+                    if (data.multiPhotos == null) {
+                        var link = `<h5 class="text-center mt-1 mb-3 mt-5 d-sm-block"><a class="btn btn-sm btn-primary  btn-lg"  href="${url}" download="DOwnload" id="downloadLink" target="__blank">Download ${type} file ⬇</a></h5>`;
+                        document.getElementById('tossButtons').innerHTML += link;
+                    }
+                    if (type == "image") {
+                        var imageLink = `<img src="${url}" class="media-size">`;
+                        document.getElementById('toss').innerHTML += imageLink;
+                        addAnotherMedia(data, imageLink);
+                    }
+                    else {
+                        var videoLink = `<video class="framed media-size" controls="" preload="auto"><source src="${url}" type="video/mp4"></video>`;
+                        document.getElementById('toss').innerHTML += videoLink;
+                    }
+
+
+                    var cardLink = `
+                        <div class="card media-size mt-1" style="width: 18rem;overflow-y:auto">
+                        <div class="card-body d-flex flex-row">
+                                <img class="card-img-top img-size" src="${data.owner.profile_pic_url}" alt="Card image cap">
+                                <div>
+                                  <h5 class="card-title font-weight-bold mb-2 ml-3 mt-2"><a href="http://www.instagram.com/${data.owner.username}" target="_blank">${data.owner.username}<a></h4>
+                                </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text" style="font-size:12px">${data.caption}</p>
+                        </div>
+                    </div>`
+                    document.getElementById('tossInfo').innerHTML = cardLink;
+                    //alert(data);
+                    // document.location.href = data;
+                },
+                error: function (error) {
+                    alert("Something wrong 😢😢😢😢");
+                }
+            });
+
+
+        });
+
+        function get(s) {
+            debugger;
+            s = 'champagnepapi';
+            $.get('https://www.instagram.com/' + s + '/?__a=1', function (data) {
+
+                if (data != null && typeof data === 'object') {
+                    debugger
+                    $.post('', { data: JSON.stringify(data) }, function (r) {
+
+                        if (r.isJson()) {
+
+                            r = JSON.parse(r);
+                            if (r.error != null) {
+
+                                $('.result-error .text').html(r.error);
+
+                            } else if (r.stories != null && r.stories.error != null) {
+
+                                $('.result-error .text').html(r.stories.error);
+
+                            } else if (r.account != null) {
+
+                                if (r.account.verified != null && r.account.verified == true) {
+                                    $('.result-account').addClass('verified');
+                                }
+
+                                $('.result-account .avatar').attr('style', 'background-image: url(' + r.account.src + ');');
+                                if (r.account.fullname != null && r.account.fullname.length > 0) {
+                                    $('.result-account').addClass('has-cta');
+                                    $('.result-account .info-wrapper .call-to-action').html(r.account.fullname);
+                                }
+                                $('.result-account').removeAttr('style');
+
+                                if (r.account.follower_count != null) {
+                                    $('.result-account .info-wrapper .followers-number').html(r.account.follower_count.toString().commas() + ' Followers');
+                                }
+
+                                $('.result-tab-selector').removeAttr('style');
+
+                                if (r.message != null) {
+
+                                    $('.result-private').removeAttr('style');
+                                    $('.result-private').html(r.message);
+                                    $('.result-loading').attr('style', 'display: none');
+                                }
+
+                                if (r.stories != null && r.stories.length > 0) {
+
+                                    if ($('.stories-list li').length == 0) {
+                                        for (var j = 0; j < r.stories.length; j++) {
+                                            var story = r.stories[j];
+
+                                            var li = document.createElement('li');
+                                            li.classList.add('story');
+                                            var div = document.createElement('div');
+                                            div.classList.add('story-post');
+                                            if (story.type == 'vid') {
+                                                var vid = document.createElement('video');
+                                                vid.setAttribute('controls', true);
+                                                vid.setAttribute('width', 300);
+                                                vid.setAttribute('height', 500);
+                                                vid.setAttribute('poster', story.thumb);
+                                                var src = document.createElement('source');
+                                                src.setAttribute('src', story.src);
+                                                src.setAttribute('type', 'video/mp4');
+                                                vid.appendChild(src);
+                                                div.appendChild(vid);
+                                            } else {
+                                                var img = document.createElement('img');
+                                                img.setAttribute('src', story.src);
+                                                img.setAttribute('width', 300);
+                                                div.appendChild(img);
+                                            }
+                                            li.appendChild(div);
+
+                                            var a = document.createElement('a');
+                                            a.setAttribute('target', '_blank');
+                                            a.setAttribute('class', 'download-btn');
+                                            a.setAttribute('href', story.src);
+                                            a.innerHTML = 'Download';
+                                            var i = document.createElement('i');
+                                            a.appendChild(i);
+                                            li.appendChild(a);
+                                            $('.stories-list').append(li);
+                                        }
+                                    }
+                                }
+
+                                if (r.highlights != null && r.highlights.length > 0) {
+
+                                    if ($('.story-highlights li').length == 0) {
+                                        for (var j = 0; j < r.highlights.length; j++) {
+                                            var highlight = r.highlights[j];
+
+                                            var li = document.createElement('li');
+                                            li.classList.add('highlight');
+                                            var a = document.createElement('a');
+                                            a.classList.add('link');
+                                            a.setAttribute('href', 'stories/' + r.account.username + '/' + highlight.id);
+                                            var div = document.createElement('div');
+                                            div.classList.add('thumbnail');
+                                            div.setAttribute('style', 'background-image: url(' + highlight.thumb + ');');
+                                            a.appendChild(div);
+                                            var span = document.createElement('span');
+                                            span.classList.add('title');
+                                            span.innerHTML = highlight.title;
+                                            a.appendChild(span);
+                                            li.appendChild(a);
+                                            $('.story-highlights').append(li);
+                                        }
+                                    }
+                                }
+
+                                $('.result-loading').attr('style', 'display: none');
+
+                                return;
+
+                            } else {
+
+                                $('.result-error .text').html('Server error<br>#SDER1');
+                            }
+                        } else {
+
+                            $('.result-error .text').html('Server error<br>#SDER2');
+                        }
+
+                        $('.result-error').removeAttr('style');
+                        $('.result-loading').attr('style', 'display: none');
+
+                    }).fail(function () {
+
+                        $('.result-error .text').html('Server could not be reached,<br>try refreshing page in a minute');
+                        $('.result-error').removeAttr('style');
+                        $('.result-loading').attr('style', 'display: none');
+                    });
+
+                } else {
+
+                    $('.result-error .text').html('Server encountered a serious error<br>please report this issue');
+                    $('.result-error').removeAttr('style');
+                    $('.result-loading').attr('style', 'display: none');
+                }
+
+            }).fail(function () {
+
+                if (xhr.status == 404) {
+
+                    $('.result-error .text').html('This profile doesn\'t exist, check your username spelling');
+
+                } else {
+
+                    $('.result-error .text').html('Server could not be reached,<br>try refreshing page in a minute');
+                }
+
+                $('.result-error').removeAttr('style');
+                $('.result-loading').attr('style', 'display: none');
+            });
+        }
+    });
+
+
+
+
+</script>
+
+<div class="col-md-12 col-12">
+    <h1 class="spacing"> Instagram Story Downloader</h1>
+    <h2 class="spacing">Download Instagram Story Online</h2>
+</div>
+<div class="input-group mb-3 mt-5 spacing">
+    <input type="text" class="form-control" id="urlText" placeholder="Username" aria-describedby="basic-addon2">
+    <div class="input-group-append">
+        <button class="btn btn-outline-primary" type="button" id="btnPost">Convert</button>
+    </div>
+</div>
+<div class="row mt-5" id="mediaDiv">
+    <div class="col-12 col-sm-12 col-lg-4 convertedUrlContent" id="toss">
+
+    </div>
+    <div class="col-12 col-sm-12 col-lg-4 convertedUrlContent" id="tossButtons">
+
+    </div>
+    <div class="col-12 col-sm-12 col-lg-4 convertedUrlContent d-flex justify-content-center" id="tossInfo">
+
+    </div>
+
+</div>
+
